@@ -33,18 +33,22 @@ class NoteOn(Button):
 class Missing(Button):
     type: str = "empty"
 
-    def message(self, id: str, color: int):
+    def message(self, color: int):
         return None
 
 
 class Layout:
-    button_layout: list[list[tuple[str, int]]] = [[]]
+    button_layout: list[list[Button]] = [[]]
     state: list[list[int]] = [[]]
+    next_state: list[list[int]] = [[]]
     ioport: mido.ports.IOPort
 
-    def __init__(self, button_layout: list[list[tuple[str, int]]], ioport: mido.ports.IOPort) -> None:
+    def __init__(
+        self, button_layout: list[list[tuple[str, int]]], ioport: mido.ports.IOPort
+    ) -> None:
         self.button_layout = button_layout
         self.state = [[0 for e in r] for r in self.button_layout]
+        self.next_state = [[0 for e in r] for r in self.button_layout]
         self.ioport = ioport
 
     def get_coords(
@@ -65,9 +69,17 @@ class Layout:
         except (IndexError, TypeError):
             return None
 
-    def color_change(self, coords: tuple[int, int], value) -> None:
+    def button_color_change(self, coords: tuple[int, int], value) -> None:
         self.state[coords[0]][coords[1]] = value
-        ioport.send(self.get_button(coords).message(value))
+        button = self.get_button(coords)
+        if not isinstance(button, Missing):
+            self.ioport.send(button.message(value))
+
+    def draw_full_next(self) -> None:
+        for row, row_v in enumerate(self.next_state):
+            for col, val in enumerate(row_v):
+                self.button_color_change((row, col), val)
+                self.next_state[row][col] = 0
 
 
 class GridLayout(Layout):
@@ -110,5 +122,5 @@ class LaunchpadMiniMk1(GridLayout):
             self,
             [[ControlChange(n) for n in range(104, 111 + 1)] + [Missing(0)]]
             + [[NoteOn(n) for n in range(x * 16, x * 16 + 8 + 1)] for x in range(8)],
-            ioport
+            ioport,
         )
