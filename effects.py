@@ -1,4 +1,4 @@
-from layouts import Layout, GridLayout
+from layouts import Layout
 
 
 class Effect:
