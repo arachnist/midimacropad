@@ -31,7 +31,7 @@ class FullFlash(Effect):
 
         self.iteration += 1
 
-        return true
+        return True
 
 
 class PointBloom(Effect):
