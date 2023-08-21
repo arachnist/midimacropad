@@ -1,4 +1,5 @@
 from layouts import Layout
+from font import Font
 
 
 class Effect:
@@ -53,3 +54,39 @@ class PointBloom(Effect):
             return False
         else:
             return True
+
+
+class TextScroll(Effect):
+    text = ""
+    bitmap = []
+
+    def __init__(
+        self, layout, start: int = 0, coords: tuple[int, int] = (0, 0), text: str = ""
+    ) -> None:
+        self.layout = layout
+        self.coords = coords
+        self.iteration = 0
+        self.start = start
+        self.text = text
+        self.bitmap = []
+
+        for c in list(text):
+            for nr, line in enumerate(Font[ord(c)][1:]):
+                if nr >= len(self.bitmap):
+                    self.bitmap.append([0, 0, 0, 0, 0, 0, 0, 0, 0])
+                self.bitmap[nr] += line
+
+        for nr, line in enumerate(self.bitmap):
+            self.bitmap[nr] += [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    def tick(self) -> bool:
+        for y, row in enumerate(self.layout.next_state):
+            for x, col in enumerate(row):
+                self.layout.next_state[y][x] = self.bitmap[y][x + self.iteration]
+
+        self.iteration += 1
+
+        if self.iteration + len(self.layout.next_state[0]) >= len(self.bitmap[0]):
+            return False
+
+        return True
